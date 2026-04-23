@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>小学数学全能自动题库</title>
+<style>
+*{box-sizing:border-box}
+body{max-width:1000px;margin:30px auto;font-family:Arial;padding:0 20px;line-height:1.7;background:#fcfcfc}
+.panel{background:#fff;padding:15px 20px;border-radius:10px;box-shadow:0 0 8px #eee;margin-bottom:20px}
+h1,h3{color:#333}
+.opt{margin:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select,input[type=number]{padding:6px 8px}
+button{padding:8px 14px;cursor:pointer;background:#4299e1;color:white;border:none;border-radius:6px}
+button.secondary{background:#68d391}
+button.warn{background:#f6ad55}
+.question-item{margin:14px 0;font-size:16px}
+.answer-input{width:70px;padding:6px;text-align:center}
+#result{font-size:18px;font-weight:bold;color:#22c55e;margin:20px 0}
+#answerArea{background:#eff6ff;padding:15px;border-radius:8px;margin-top:20px;display:none;color:#1e40af}
+.vertical{font-family:monospace;white-space:pre}
+@media print{
+  .opt,.no-print{display:none}
+  #answerArea{display:block!important;color:#000}
+}
+</style>
+</head>
+
+<body>
+<div class="panel no-print">
+  <h1>小学数学全能自动题库</h1>
+  <div class="opt">
+    年级：
+    <select id="grade">
+      <option value="1">一年级</option>
+      <option value="2">二年级</option>
+      <option value="3">三年级</option>
+      <option value="4">四年级</option>
+      <option value="5">五年级</option>
+      <option value="6">六年级</option>
+    </select>
+
+    题型：
+    <select id="type">
+      <option value="kou">口算题</option>
+      <option value="vertical">竖式计算</option>
+      <option value="apply">应用题</option>
+      <option value="frac">分数/小数</option>
+      <option value="unit">单位换算</option>
+      <option value="geo">几何（周长面积体积）</option>
+      <option value="remainder">余数除法</option>
+      <option value="multiple">倍数问题</option>
+      <option value="time">时间计算</option>
+      <option value="money">货币换算</option>
+      <option value="sequence">找规律</option>
+      <option value="all">全部随机混合</option>
+    </select>
+
+    题量：<input type="number" id="count" value="10" style="width:70px">
+    <button onclick="generate()">生成题目</button>
+    <button class="secondary" onclick="check()">提交判分</button>
+    <button class="warn" onclick="showAnswers()">显示答案</button>
+    <button onclick="window.print()">打印试卷</button>
+  </div>
+</div>
+
+<div id="paper" class="panel"></div>
+<div id="result"></div>
+<div id="answerArea"></div>
+
+<script>
+let questions = []
+
+// 生成题目
+function generate(){
+  const grade = +document.getElementById('grade').value
+  const type = document.getElementById('type').value
+  const count = +document.getElementById('count').value
+  questions = []
+  let html = ''
+
+  for(let i=0;i<count;i++){
+    let q
+    if(type==='all'){
+      const ts = ['kou','vertical','apply','frac','unit','geo','remainder','multiple','time','money','sequence']
+      q = genOne(ts[Math.floor(Math.random()*ts.length)], grade)
+    }else{
+      q = genOne(type, grade)
+    }
+    questions.push(q)
+    html += `<div class="question-item">${i+1}. ${q.text}<br>
+    答案：<input type="text" class="answer-input" data-i="${i}"></div>`
+  }
+
+  document.getElementById('paper').innerHTML = html
+  document.getElementById('result').innerText = ''
+  document.getElementById('answerArea').style.display = 'none'
+}
+
+function genOne(t, g){
+  switch(t){
+    case 'kou': return genKou(g)
+    case 'vertical': return genVertical(g)
+    case 'apply': return genApply(g)
+    case 'frac': return genFrac(g)
+    case 'unit': return genUnit(g)
+    case 'geo': return genGeo(g)
+    case 'remainder': return genRemainder(g)
+    case 'multiple': return genMultiple(g)
+    case 'time': return genTime(g)
+    case 'money': return genMoney(g)
+    case 'sequence': return genSequence(g)
+    default: return genKou(g)
+  }
+}
+
+// 随机数
+function r(min,max){
+  return Math.floor(Math.random()*(max-min+1))+min
+}
+
+// 1.口算
+function genKou(g){
+  let a,b,op,ans
+  if(g<=2){
+    a=r(1,50);b=r(1,50);op=['+','-'][r(0,1)]
+    ans=op=='+'?a+b:a-b;if(ans<0)return genKou(g)
+  }else if(g<=4){
+    a=r(10,300);b=r(10,300);op=['+','-','×','÷'][r(0,3)]
+    if(op=='÷'){ans=r(1,30);b=r(1,30);a=ans*b}
+    else ans=op=='+'?a+b:op=='-'?a-b:a*b
+  }else{
+    a=r(50,800);b=r(50,800);op=['+','-','×','÷'][r(0,3)]
+    if(op=='÷'){ans=r(2,60);b=r(2,60);a=ans*b}else ans=op=='+'?a+b:op=='-'?a-b:a*b
+  }
+  return {text:`${a} ${op} ${b} = ?`, ans:ans+''}
+}
+
+// 2.竖式（新增减法/乘法/除法）
+function genVertical(g){
+  let a,b,op,ans,t
+  const ops = g<=3 ? ['+','-'] : ['+','-','×','÷']
+  op = ops[r(0, ops.length-1)]
+  
+  if(op === '+'){
+    a = g<=3 ? r(10,300) : r(100,1000)
+    b = g<=3 ? r(10,300) : r(100,1000)
+    ans = a + b
+    t = `${a}\n+${b}\n----`
+  } else if(op === '-'){
+    a = g<=3 ? r(50,300) : r(200,1000)
+    b = g<=3 ? r(10,a-10) : r(50,a-50)
+    ans = a - b
+    t = `${a}\n-${b}\n----`
+  } else if(op === '×'){
+    a = g<=4 ? r(10,50) : r(20,100)
+    b = g<=4 ? r(2,10) : r(5,20)
+    ans = a * b
+    t = `${a}\n×${b}\n----`
+  } else { // ÷
+    b = g<=4 ? r(2,10) : r(5,20)
+    ans = g<=4 ? r(5,30) : r(10,50)
+    a = ans * b
+    t = `${a}\n÷${b}\n----`
+  }
+  return {text:`<pre class="vertical">${t}</pre>`, ans:ans+''}
+}
+
+// 3.应用题（新增更多场景）
+function genApply(g){
+  const mode = r(1,12)
+  let t,ans
+  if(mode==1){
+    let x=r(10,100),y=r(10,100)
+    t=`商店里书包${x}元，文具盒${y}元，买这两件一共多少元？`
+    ans=x+y
+  }else if(mode==2){
+    let v=r(40,80),h=r(2,6)
+    t=`汽车每小时行${v}千米，行驶${h}小时，一共行驶多少千米？`
+    ans=v*h
+  }else if(mode==3){
+    let total=r(50,500),n=r(2,10)
+    t=`一共有${total}个糖果，平均分给${n}个小朋友，每人分几个？`
+    ans=Math.floor(total/n)
+  }else if(mode==4){
+    let a=r(20,200),b=r(20,200)
+    t=`一班${a}人，二班${b}人，两班一共多少人？`
+    ans=a+b
+  }else if(mode==5){
+    let now=r(7,14),add=r(2,10)
+    t=`小明今年${now}岁，${add}年后他多少岁？`
+    ans=now+add
+  }else if(mode==6){
+    let day=r(3,10),each=r(10,60)
+    t=`工人每天做${each}个零件，做${day}天一共做多少个？`
+    ans=day*each
+  }else if(mode==7){
+    let len=r(5,30),wid=r(4,20)
+    t=`长方形长${len}米，宽${wid}米，面积是多少平方米？`
+    ans=len*wid
+  }else if(mode==8){
+    let ori=r(50,200),use=r(10,100)
+    t=`一本书有${ori}页，已经看了${use}页，还剩多少页？`
+    ans=ori-use
+  }else if(mode==9){ // 新增：购物找零
+    let money=r(50,200),price=r(10,money-10)
+    t=`小明带了${money}元买文具，花了${price}元，还剩多少元？`
+    ans=money-price
+  }else if(mode==10){ // 新增：植树问题
+    let row=r(5,15),col=r(3,10)
+    t=`同学们植树，每行种${row}棵，种了${col}行，一共种了多少棵？`
+    ans=row*col
+  }else if(mode==11){ // 新增：速度差
+    let v1=r(60,100),v2=r(40,80)
+    t=`甲车每小时行${v1}千米，乙车每小时行${v2}千米，甲车比乙车每小时快多少千米？`
+    ans=v1-v2
+  }else{ // 新增：物品分配剩余
+    let total=r(100,500),each=r(20,50)
+    t=`有${total}个苹果，每个篮子装${each}个，能装满几个篮子？`
+    ans=Math.floor(total/each)
+  }
+  return {text:t, ans:ans+''}
+}
+
+// 4.分数/小数（新增异分母加减、小数乘除）
+function genFrac(g){
+  if(g<4) return genKou(g)
+  const ty = r(1,4)
+  if(ty==1){ // 同分母分数加
+    let a=r(1,9),b=r(1,9),den=r(2,10)
+    return {text:`${a}/${den} + ${b}/${den} = ?`, ans:((a+b)/den).toString()}
+  }else if(ty==2){ // 异分母分数加（通分后计算）
+    let a=r(1,5),b=r(1,5),d1=r(2,5),d2=r(2,5)
+    const commonDen = d1 * d2
+    const newA = a * d2
+    const newB = b * d1
+    const res = (newA + newB) / commonDen
+    return {text:`${a}/${d1} + ${b}/${d2} = ?（结果保留1位小数）`, ans:res.toFixed(1)}
+  }else if(ty==3){ // 小数加法
+    let a=r(1,20),b=r(1,20)
+    return {text:`${(a/10).toFixed(1)} + ${(b/10).toFixed(1)} = ?`, ans:((a+b)/10).toFixed(1)}
+  }else{ // 小数乘法
+    let a=r(1,10),b=r(1,10)
+    return {text:`${(a/10).toFixed(1)} × ${b} = ?`, ans:((a*b)/10).toFixed(1)}
+  }
+}
+
+// 5.单位换算（新增容积、时间单位）
+function genUnit(g){
+  const ty = r(1,8)
+  let t,ans
+  if(ty==1){ // 长度：米→厘米
+    let v=r(1,10)
+    t=`${v}米 = ______ 厘米`
+    ans=v*100
+  }else if(ty==2){ // 长度：厘米→米
+    let v=r(100,500)
+    t=`${v}厘米 = ______ 米`
+    ans=(v/100).toString()
+  }else if(ty==3){ // 质量：千克→克
+    let v=r(1,10)
+    t=`${v}千克 = ______ 克`
+    ans=v*1000
+  }else if(ty==4){ // 质量：克→千克
+    let v=r(500,3000)
+    t=`${v}克 = ______ 千克`
+    ans=(v/1000).toString()
+  }else if(ty==5){ // 容积：升→毫升
+    let v=r(1,10)
+    t=`${v}升 = ______ 毫升`
+    ans=v*1000
+  }else if(ty==6){ // 容积：毫升→升
+    let v=r(500,5000)
+    t=`${v}毫升 = ______ 升`
+    ans=(v/1000).toString()
+  }else if(ty==7){ // 时间：小时→分钟
+    let v=r(1,10)
+    t=`${v}小时 = ______ 分钟`
+    ans=v*60
+  }else{ // 时间：分钟→小时
+    let v=r(60,300)
+    t=`${v}分钟 = ______ 小时`
+    ans=(v/60).toString()
+  }
+  return {text:t, ans:ans+''}
+}
+
+// 6.几何（新增体积计算）
+function genGeo(g){
+  const ty=r(1,5)
+  let t,ans
+  if(ty==1){ // 长方形周长
+    let a=r(3,20),b=r(3,15)
+    t=`长方形长${a}cm，宽${b}cm，周长是多少cm？`
+    ans=(a+b)*2
+  }else if(ty==2){ // 长方形面积
+    let a=r(3,20),b=r(3,15)
+    t=`长方形长${a}cm，宽${b}cm，面积是多少cm²？`
+    ans=a*b
+  }else if(ty==3){ // 正方形面积
+    let a=r(3,20)
+    t=`正方形边长${a}cm，面积是多少cm²？`
+    ans=a*a
+  }else if(ty==4 && g>=5){ // 长方体体积（五年级+）
+    let a=r(3,15),b=r(2,10),c=r(2,8)
+    t=`长方体长${a}cm，宽${b}cm，高${c}cm，体积是多少cm³？`
+    ans=a*b*c
+  }else{ // 正方形周长
+    let a=r(3,20)
+    t=`正方形边长${a}cm，周长是多少cm？`
+    ans=a*4
+  }
+  return {text:t, ans:ans+''}
+}
+
+// 7.余数除法（新增题型）
+function genRemainder(g){
+  if(g<3) return genKou(g) // 低年级返回口算
+  let divisor = r(2, 15)
+  let quotient = r(1, 20)
+  let remainder = r(1, divisor-1)
+  let dividend = divisor * quotient + remainder
+  return {
+    text:`${dividend} ÷ ${divisor} = ?（写出商和余数，格式：商...余数）`,
+    ans:`${quotient}...${remainder}`
+  }
+}
+
+// 8.倍数问题（新增题型）
+function genMultiple(g){
+  if(g<3) return genKou(g)
+  const ty = r(1,3)
+  let t,ans
+  if(ty==1){ // 求几倍
+    let a=r(10,50),b=r(2,10)
+    t=`${a*b}是${a}的几倍？`
+    ans=b.toString()
+  }else if(ty==2){ // 求几倍的数
+    let a=r(10,50),b=r(2,10)
+    t=`${a}的${b}倍是多少？`
+    ans=(a*b).toString()
+  }else{ // 已知几倍求原数
+    let a=r(10,50),b=r(2,10)
+    t=`一个数的${b}倍是${a*b}，这个数是多少？`
+    ans=a.toString()
+  }
+  return {text:t, ans:ans}
+}
+
+// 9.时间计算（新增题型）
+function genTime(g){
+  if(g<3) return genKou(g)
+  const ty = r(1,4)
+  let t,ans
+  if(ty==1){ // 计算经过时间
+    let h1=r(8,12),m1=r(0,59),h2=r(h1,18),m2=r(0,59)
+    if(h1===h2 && m2<m1) h2++ // 确保结束时间晚于开始时间
+    const totalM1 = h1*60 + m1
+    const totalM2 = h2*60 + m2
+    const diff = totalM2 - totalM1
+    const diffH = Math.floor(diff/60)
+    const diffM = diff%60
+    t=`从${h1}:${m1<10?'0'+m1:m1}到${h2}:${m2<10?'0'+m2:m2}，经过了多少分钟？`
+    ans=diff.toString()
+  }else if(ty==2){ // 分钟转小时分钟
+    let m=r(60, 300)
+    const h = Math.floor(m/60)
+    const rm = m%60
+    t=`${m}分钟 = ______ 小时______分钟`
+    ans=`${h}小时${rm}分钟`
+  }else if(ty==3){ // 开始时间+经过时间
+    let h=r(8,14), m=r(0,59), addM=r(10, 120)
+    const total = h*60 + m + addM
+    const resH = Math.floor(total/60)
+    const resM = total%60
+    t=`现在是${h}:${m<10?'0'+m:m}，再过${addM}分钟是几点？（格式：时:分）`
+    ans=`${resH}:${resM<10?'0'+resM:resM}`
+  }else{ // 结束时间-经过时间
+    let h=r(10,18), m=r(0,59), subM=r(10, 120)
+    const total = h*60 + m - subM
+    if(total < 0) total += 24*60 // 跨天处理
+    const resH = Math.floor(total/60)
+    const resM = total%60
+    t=`事件在${h}:${m<10?'0'+m:m}结束，持续了${subM}分钟，开始时间是几点？（格式：时:分）`
+    ans=`${resH}:${resM<10?'0'+resM:resM}`
+  }
+  return {text:t, ans:ans}
+}
+
+// 10.货币换算（新增题型）
+function genMoney(g){
+  const ty = r(1,4)
+  let t,ans
+  if(ty==1){ // 元角分转元
+    let y=r(1,20), j=r(0,9), f=r(0,9)
+    t=`${y}元${j}角${f}分 = ______ 元（保留2位小数）`
+    ans=(y + j/10 + f/100).toFixed(2)
+  }else if(ty==2){ // 元转元角分
+    let num = r(1, 20) + r(0,9)/10 + r(0,9)/100
+    const y = Math.floor(num)
+    const j = Math.floor((num - y)*10)
+    const f = Math.round(((num - y)*10 - j)*10)
+    t=`${num.toFixed(2)}元 = ______元______角______分`
+    ans=`${y}元${j}角${f}分`
+  }else if(ty==3){ // 元角相加
+    let y1=r(1,10), j1=r(0,9), y2=r(1,10), j2=r(0,9)
+    const totalJ = y1*10 + j1 + y2*10 + j2
+    const totalY = Math.floor(totalJ/10)
+    const remainJ = totalJ%10
+    t=`${y1}元${j1}角 + ${y2}元${j2}角 = ______元______角`
+    ans=`${totalY}元${remainJ}角`
+  }else{ // 购物总价
+    let p1=r(5,20), p2=r(3,15), p3=r(2,10)
+    const total = p1 + p2 + p3
+    t=`买铅笔花了${p1}元，笔记本${p2}元，橡皮${p3}元，一共花了多少元？`
+    ans=total.toString()
+  }
+  return {text:t, ans:ans}
+}
+
+// 11.找规律（新增题型）
+function genSequence(g){
+  if(g<2) return genKou(g)
+  const ty = r(1,4)
+  let seq = [], rule, ans
+  if(ty==1){ // 等差数列（加固定数）
+    const start = r(1, 10)
+    const step = r(2, 5)
+    seq = [start, start+step, start+step*2, start+step*3]
+    ans = (start+step*4).toString()
+    rule = `每次加${step}`
+  }else if(ty==2){ // 等比数列（乘固定数）
+    const start = r(1, 5)
+    const step = r(2, 3)
+    seq = [start, start*step, start*step*step, start*step*step*step]
+    ans = (start*step*step*step*step).toString()
+    rule = `每次乘${step}`
+  }else if(ty==3){ // 奇偶交替
+    const start = r(1, 10)
+    seq = start%2===0 ? [start, start+1, start+3, start+5] : [start, start+1, start+3, start+5]
+    ans = (start+7).toString()
+    rule = '奇偶交替，每次加1、加2循环'
+  }else{ // 斐波那契数列（前两项和）
+    const a = r(1, 5), b = r(1, 5)
+    seq = [a, b, a+b, a+b+b]
+    ans = (a+b + a+b+b).toString()
+    rule = '前两项之和等于后一项'
+  }
+  return {
+    text:`找规律填数：${seq.join(', ')}，下一个数是？（规律：${rule}）`,
+    ans:ans
+  }
+}
+
+// 判分
+function check(){
+  let right=0,total=questions.length
+  document.querySelectorAll('.answer-input').forEach(ipt=>{
+    let v=ipt.value.trim()
+    let idx=+ipt.dataset.i
+    // 兼容小数末尾0的情况（如 2.0 和 2 视为正确）
+    const userAns = v.replace(/小时|分钟|角|分|元/g, '').replace(/:/g, '.').replace(/\.\.+/, '.')
+    const stdAns = questions[idx].ans.replace(/小时|分钟|角|分|元/g, '').replace(/:/g, '.').replace(/\.\.+/, '.')
+    
+    // 尝试数值比较（处理小数）
+    let isCorrect = false
+    if(!isNaN(Number(userAns)) && !isNaN(Number(stdAns))){
+      isCorrect = Math.abs(Number(userAns) - Number(stdAns)) < 0.001
+    }else{
+      isCorrect = userAns === stdAns // 非数值直接字符串比较
+    }
+    
+    if(isCorrect) right++
+  })
+  let score=Math.round(right/total*100)
+  document.getElementById('result').innerText=
+    `共${total}题，答对${right}题，得分：${score}分`
+}
+
+// 显示答案
+function showAnswers(){
+  let h='<h3>标准答案</h3>'
+  questions.forEach((q,i)=>{
+    h+=`<div>${i+1}. ${q.ans}</div>`
+  })
+  let a=document.getElementById('answerArea')
+  a.innerHTML=h
+  a.style.display='block'
+}
+</script>
+</body>
+</html>
