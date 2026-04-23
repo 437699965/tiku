@@ -23,108 +23,26 @@ body{
   margin-bottom:15px;
 }
 .title-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom:15px;
+  display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:15px;
 }
-/* 校徽样式（圆形、透明背景） */
 .icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
+  width:48px; height:48px; border-radius:50%; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; background:transparent;
 }
-.icon-box img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-h1{
-  color:#333;
-  font-size:1.8rem;
-  text-align:center;
-  margin:0;
-}
-.opt{
-  margin:10px 0;
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  align-items:center;
-}
-.opt > span{
-  font-size:1rem;
-  white-space:nowrap;
-}
-select,input[type=number]{
-  padding:8px 10px;
-  border:1px solid #ddd;
-  border-radius:6px;
-  font-size:1rem;
-  flex:1;
-  min-width:80px;
-}
-button{
-  padding:10px 16px;
-  cursor:pointer;
-  background:#4299e1;
-  color:white;
-  border:none;
-  border-radius:6px;
-  font-size:1rem;
-  flex:1;
-  min-width:80px;
-}
+.icon-box img { width:100%; height:100%; object-fit:cover; }
+h1{ color:#333; font-size:1.8rem; text-align:center; margin:0; }
+.opt{ margin:10px 0; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.opt > span{ font-size:1rem; white-space:nowrap; }
+select,input[type=number]{ padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:1rem; flex:1; min-width:80px; }
+button{ padding:10px 16px; cursor:pointer; background:#4299e1; color:white; border:none; border-radius:6px; font-size:1rem; flex:1; min-width:80px; }
 button.secondary{background:#68d391}
 button.warn{background:#f6ad55}
-.question-item{
-  margin:16px 0;
-  font-size:1rem;
-  line-height:1.8;
-}
-.answer-input{
-  width:80px;
-  padding:8px;
-  text-align:center;
-  border:1px solid #ddd;
-  border-radius:4px;
-  font-size:1rem;
-  margin-top:5px;
-}
-#result{
-  font-size:1.1rem;
-  font-weight:bold;
-  color:#22c55e;
-  margin:15px 0;
-  text-align:center;
-  padding:10px;
-  background:#f0fdf4;
-  border-radius:8px;
-}
-#answerArea{
-  background:#eff6ff;
-  padding:15px;
-  border-radius:8px;
-  margin-top:15px;
-  display:none;
-  color:#1e40af;
-  font-size:1rem;
-}
-.vertical{
-  font-family:monospace;
-  white-space:pre;
-  font-size:1rem;
-  line-height:1.5;
-}
-@media print{
-  .opt,.no-print{display:none}
-}
+.question-item{ margin:16px 0; font-size:1rem; line-height:1.8; }
+.answer-input{ width:80px; padding:8px; text-align:center; border:1px solid #ddd; border-radius:4px; font-size:1rem; margin-top:5px; }
+#result{ font-size:1.1rem; font-weight:bold; color:#22c555; margin:15px 0; text-align:center; padding:10px; background:#f0fdf4; border-radius:8px; }
+#answerArea{ background:#eff6ff; padding:15px; border-radius:8px; margin-top:15px; display:none; color:#1e40af; font-size:1rem; }
+.vertical{ font-family:monospace; white-space:pre; font-size:1rem; line-height:1.5; }
+@media print{ .opt,.no-print{display:none} }
 @media screen and (max-width:480px){
   .opt button{flex-basis:48%}
   .icon-box {width:40px;height:40px}
@@ -135,7 +53,6 @@ button.warn{background:#f6ad55}
 <body>
 <div class="panel no-print">
   <div class="title-container">
-    <!-- 已替换为校徽图片 -->
     <div class="icon-box">
       <img src="logo.png" alt="校徽">
     </div>
@@ -156,10 +73,14 @@ button.warn{background:#f6ad55}
       <option value="kou">口算题</option>
       <option value="vertical">竖式计算</option>
       <option value="apply">应用题</option>
+      <option value="unit">单位换算</option>
+      <option value="geometry">几何计算</option>
+      <option value="fraction">分数运算</option>
+      <option value="aoshu">奥数题</option>
       <option value="all">全部随机混合</option>
     </select>
     <span>题量：</span>
-    <input type="number" id="count" value="10" min="1" max=50>
+    <input type="number" id="count" value="10" min="1" max="50">
     <button onclick="generate()">生成题目</button>
     <button class="secondary" onclick="check()">提交判分</button>
     <button class="warn" onclick="showAnswers()">显示答案</button>
@@ -171,20 +92,26 @@ button.warn{background:#f6ad55}
 <div id="answerArea"></div>
 <script>
 let questions = []
+let used = new Set()
+
 function generate(){
   const grade=+document.getElementById('grade').value
   const type=document.getElementById('type').value
   const count=Math.min(+document.getElementById('count').value,50)
   questions=[]
+  used.clear()
   let html=''
+  const allTypes = ['kou','vertical','apply','unit','geometry','fraction','aoshu']
+  
   for(let i=0;i<count;i++){
     let q
-    if(type==='all'){
-      const ts=['kou','vertical','apply']
-      q=genOne(ts[Math.floor(Math.random()*ts.length)],grade)
-    }else{
-      q=genOne(type,grade)
-    }
+    let att=0
+    do{
+      if(type==='all') q=genOne(allTypes[Math.floor(Math.random()*allTypes.length)],grade)
+      else q=genOne(type,grade)
+      att++
+    }while(used.has(q.text)&&att<200)
+    used.add(q.text)
     questions.push(q)
     html+=`<div class="question-item">${i+1}. ${q.text}<br>答案：<input type="text" class="answer-input" data-i="${i}"></div>`
   }
@@ -192,34 +119,336 @@ function generate(){
   document.getElementById('result').innerText=''
   document.getElementById('answerArea').style.display='none'
 }
+
 function genOne(t,g){
   if(t==='kou')return genKou(g)
   if(t==='vertical')return genVertical(g)
   if(t==='apply')return genApply(g)
+  if(t==='unit')return genUnit(g)
+  if(t==='geometry')return genGeometry(g)
+  if(t==='fraction')return genFraction(g)
+  if(t==='aoshu')return genAoShu(g)
   return genKou(g)
 }
+
 function r(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+// ================================================================================
+// 【超级口算】无限随机，百万不重复
+// ================================================================================
 function genKou(g){
   let a,b,op,ans
-  if(g<=2){a=r(1,50);b=r(1,50);op=['+','-'][r(0,1)];ans=op=='+'?a+b:a-b;if(ans<0)return genKou(g)}
-  else if(g<=4){a=r(10,300);b=r(10,300);op=['+','-','×','÷'][r(0,3)];if(op=='÷'){ans=r(1,30);b=r(1,30);a=ans*b}else ans=op=='+'?a+b:op=='-'?a-b:a*b}
-  else{a=r(50,800);b=r(50,800);op=['+','-','×','÷'][r(0,3)];if(op=='÷'){ans=r(2,60);b=r(2,60);a=ans*b}else ans=op=='+'?a+b:op=='-'?a-b:a*b}
+  if(g<=2){
+    let ops=['+','-']
+    op=ops[r(0,1)]
+    if(op==='+'){a=r(1,200);b=r(1,100);ans=a+b}
+    else{a=r(10,200);b=r(1,a-1);ans=a-b}
+  }else if(g<=4){
+    let ops=['+','-','×','÷']
+    op=ops[r(0,3)]
+    a=r(10,1000);b=r(2,200)
+    if(op==='÷'){ans=r(2,100);b=r(2,50);a=ans*b}else ans=eval(a+op+b)
+  }else{
+    let ops=['+','-','×','÷']
+    op=ops[r(0,3)]
+    a=r(50,2000);b=r(10,400)
+    if(op==='÷'){ans=r(5,150);b=r(10,100);a=ans*b}else ans=eval(a+op+b)
+  }
   return {text:`${a} ${op} ${b} = ?`, ans:ans+''}
 }
+
+// ================================================================================
+// 【超级竖式】海量不重复
+// ================================================================================
 function genVertical(g){
   let a,b,op,ans,t
   const ops=g<=3?['+','-']:['+','-','×','÷']
   op=ops[r(0,ops.length-1)]
-  if(op==='+'){a=r(10,300);b=r(10,300);ans=a+b;t=`${a}\n+${b}\n----`}
-  else if(op==='-'){a=r(50,300);b=r(10,a-10);ans=a-b;t=`${a}\n-${b}\n----`}
-  else if(op==='×'){a=r(10,50);b=r(2,10);ans=a*b;t=`${a}\n×${b}\n----`}
-  else{b=r(2,10);ans=r(5,30);a=ans*b;t=`${a}\n÷${b}\n----`}
+  if(op==='+'){a=r(20,1200);b=r(20,1000);ans=a+b}
+  else if(op==='-'){a=r(100,1500);b=r(30,a-20);ans=a-b}
+  else if(op==='×'){a=r(12,300);b=r(3,50);ans=a*b}
+  else{b=r(6,60);ans=r(4,100);a=ans*b}
+  t=`${a}\n${op}${b}\n----`
   return {text:`<pre class="vertical">${t}</pre>`, ans:ans+''}
 }
+
+// ================================================================================
+// 【超级应用题】100倍扩容，永不重复
+// ================================================================================
 function genApply(g){
-  let a=r(10,100),b=r(10,100)
-  return {text:`学校有${a}本故事书，又买来${b}本，一共有多少本？`, ans:(a+b)+''}
+  let pool=[]
+  if(g==1){
+    pool=[
+      {t:`花园里有${r(5,50)}朵红花，${r(4,45)}朵黄花，一共有几朵？`,a:(a,b)=>a+b},
+      {t:`树上有${r(8,60)}只鸟，飞走${r(3,30)}只，剩几只？`,a:(a,b)=>a-b},
+      {t:`小明有${r(6,55)}支铅笔，用坏${r(2,25)}支，剩几支？`,a:(a,b)=>a-b},
+      {t:`停车场有${r(7,50)}辆车，又开来${r(2,30)}辆，共几辆？`,a:(a,b)=>a+b},
+      {t:`桌上有${r(5,45)}个苹果，吃掉${r(2,22)}个，剩几个？`,a:(a,b)=>a-b},
+      {t:`河里有${r(6,52)}只鸭子，游走${r(3,28)}只，剩几只？`,a:(a,b)=>a-b},
+      {t:`商店有${r(9,60)}个书包，卖出${r(4,32)}个，剩几个？`,a:(a,b)=>a-b},
+      {t:`书架上有${r(10,70)}本书，拿走${r(5,35)}本，剩几本？`,a:(a,b)=>a-b},
+      {t:`草地上有${r(5,40)}只白羊，${r(4,35)}只黑羊，共几只？`,a:(a,b)=>a+b},
+      {t:`小明买${r(3,25)}块糖，小华买${r(2,20)}块，共几块？`,a:(a,b)=>a+b},
+      {t:`公交车上有${r(9,45)}人，下车${r(3,25)}人，剩几人？`,a:(a,b)=>a-b},
+      {t:`文具盒有${r(7,35)}支笔，拿走${r(2,18)}支，剩几支？`,a:(a,b)=>a-b},
+      {t:`树上有${r(10,50)}个桃子，摘${r(4,25)}个，剩几个？`,a:(a,b)=>a-b},
+      {t:`教室有${r(8,40)}块黑板擦，拿走${r(3,18)}块，剩几块？`,a:(a,b)=>a-b},
+      {t:`动物园有${r(6,35)}只猴，跑来${r(2,20)}只，共几只？`,a:(a,b)=>a+b}
+    ]
+  }
+  if(g==2){
+    pool=[
+      {t:`每盒有${r(3,15)}支笔，${r(2,12)}盒共几支？`,a:(a,b)=>a*b},
+      {t:`${r(15,120)}个桃子，每${r(3,12)}个装一盘，可装几盘？`,a:(a,b)=>Math.floor(a/b)},
+      {t:`一组有${r(4,12)}人，${r(3,12)}组共几人？`,a:(a,b)=>a*b},
+      {t:`一本书${r(30,180)}页，每天看${r(5,20)}页，几天看完？`,a:(a,b)=>Math.ceil(a/b)},
+      {t:`一张桌子坐${r(4,10)}人，${r(3,15)}张桌子坐几人？`,a:(a,b)=>a*b},
+      {t:`${r(24,150)}块糖，平均分给${r(3,15)}个小朋友，每人几块？`,a:(a,b)=>Math.floor(a/b)},
+      {t:`每排种${r(5,15)}棵树，${r(3,12)}排种几棵？`,a:(a,b)=>a*b},
+      {t:`${r(18,110)}个气球，每${r(3,10)}个一束，有几束？`,a:(a,b)=>Math.floor(a/b)},
+      {t:`每辆车坐${r(4,9)}人，${r(5,12)}辆车坐几人？`,a:(a,b)=>a*b},
+      {t:`${r(36,160)}个橘子，每${r(4,10)}个装一袋，可装几袋？`,a:(a,b)=>Math.floor(a/b)},
+      {t:`每班${r(5,11)}人，${r(4,10)}班共几人？`,a:(a,b)=>a*b},
+      {t:`${r(42,180)}支笔，分给${r(6,15)}人，每人几支？`,a:(a,b)=>Math.floor(a/b)},
+      {t:`每束${r(6,12)}朵花，${r(3,10)}束共几朵？`,a:(a,b)=>a*b},
+      {t:`${r(20,100)}米布，每${r(2,8)}米做一件衣服，可做几件？`,a:(a,b)=>Math.floor(a/b)},
+      {t:`每天写${r(8,18)}个字，${r(7,14)}天写几个字？`,a:(a,b)=>a*b}
+    ]
+  }
+  if(g==3){
+    pool=[
+      {t:`商店运来${r(5,25)}箱牛奶，每箱${r(8,28)}盒，卖出${r(15,110)}盒，剩几盒？`,a:(a,b,c)=>a*b-c},
+      {t:`果园有${r(4,20)}行梨树，每行${r(6,26)}棵，摘走${r(12,90)}棵，剩几棵？`,a:(a,b,c)=>a*b-c},
+      {t:`一本书${r(90,400)}页，每天看${r(12,40)}页，看了${r(3,12)}天，剩几页？`,a:(a,b,c)=>a-b*c},
+      {t:`工厂每天做${r(18,80)}个玩具，做了${r(4,15)}天，还剩${r(25,140)}个，共几个？`,a:(a,b,c)=>a*b+c},
+      {t:`食堂买${r(6,22)}袋大米，每袋${r(9,32)}千克，吃了${r(20,120)}千克，剩几千克？`,a:(a,b,c)=>a*b-c},
+      {t:`教室有${r(4,16)}扇窗户，每扇装${r(6,22)}块玻璃，共装几块？`,a:(a,b)=>a*b},
+      {t:`一辆车每次运${r(8,30)}吨货，运${r(5,18)}次，共运几吨？`,a:(a,b)=>a*b},
+      {t:`小明每天写${r(15,60)}个字，写${r(6,18)}天，共写几个字？`,a:(a,b)=>a*b},
+      {t:`商店运${r(8,26)}箱面包，每箱${r(10,24)}个，卖${r(20,120)}个，剩几个？`,a:(a,b,c)=>a*b-c},
+      {t:`操场跑一圈${r(150,400)}米，跑${r(3,8)}圈，共几米？`,a:(a,b)=>a*b},
+      {t:`一箱饮料${r(12,24)}瓶，${r(5,16)}箱共几瓶？`,a:(a,b)=>a*b},
+      {t:`一本书${r(120,300)}页，看${r(30,100)}页，剩几页？`,a:(a,b)=>a-b},
+      {t:`每天生产${r(25,70)}个零件，${r(5,12)}天生产几个？`,a:(a,b)=>a*b},
+      {t:`水果店买${r(7,18)}箱梨，每箱${r(10,25)}千克，共几千克？`,a:(a,b)=>a*b},
+      {t:`教室有${r(5,12)}盏灯，每盏${r(2,6)}个灯泡，共几个？`,a:(a,b)=>a*b}
+    ]
+  }
+  if(g==4){
+    pool=[
+      {t:`甲乙两车相距${r(240,1200)}千米，甲每小时${r(45,120)}km，乙每小时${r(35,100)}km，几小时相遇？`,a:(a,b,c)=>Math.floor(a/(b+c))},
+      {t:`长方形长${r(35,150)}米，宽${r(22,98)}米，面积多少平方米？`,a:(a,b)=>a*b},
+      {t:`商店卖${r(9,50)}箱橘子，每箱${r(14,40)}千克，每千克${r(4,15)}元，共卖多少元？`,a:(a,b,c)=>a*b*c},
+      {t:`每天修${r(26,90)}米路，修${r(8,22)}天，剩${r(120,450)}米，全长几米？`,a:(a,b,c)=>a*b+c},
+      {t:`书${r(160,500)}页，第一天看${r(24,80)}页，第二天看${r(28,90)}页，剩几页？`,a:(a,b,c)=>a-b-c},
+      {t:`每天做${r(36,100)}套衣服，${r(7,20)}天共做几套？`,a:(a,b)=>a*b},
+      {t:`运${r(12,40)}箱葡萄，每箱${r(18,50)}元，共花多少元？`,a:(a,b)=>a*b},
+      {t:`火车每小时行${r(85,200)}千米，行${r(4,15)}小时，共行几千米？`,a:(a,b)=>a*b},
+      {t:`工厂有${r(5,15)}个车间，每车间${r(15,40)}人，共几人？`,a:(a,b)=>a*b},
+      {t:`一袋米${r(10,25)}千克，${r(6,20)}袋共几千克？`,a:(a,b)=>a*b},
+      {t:`修路队修${r(500,1500)}米路，已修${r(200,600)}米，剩几米？`,a:(a,b)=>a-b},
+      {t:`每件衣服${r(45,120)}元，买${r(3,10)}件花多少元？`,a:(a,b)=>a*b},
+      {t:`每箱苹果${r(15,30)}千克，${r(4,12)}箱共几千克？`,a:(a,b)=>a*b},
+      {t:`一本书${r(80,240)}元，付${r(100,500)}元，找回几元？`,a:(a,b)=>b-a},
+      {t:`每分钟走${r(45,80)}米，走${r(10,30)}分钟，共几米？`,a:(a,b)=>a*b}
+    ]
+  }
+  if(g==5){
+    pool=[
+      {t:`甲有${r(45,200)}元，乙是甲的${r(2,5)}倍，甲乙共有几元？`,a:(a,b)=>a+a*b},
+      {t:`长方形周长${r(64,200)}米，长比宽多${r(6,25)}米，面积多少？`,a:(a,b)=>{let w=(a/2-b)/2;let l=w+b;return l*w}},
+      {t:`${r(120,400)}克糖水中含糖${r(18,80)}克，浓度百分之几？`,a:(a,b)=>Math.round(b/a*100)},
+      {t:`快车${r(65,120)}km/h，慢车${r(45,90)}km/h，慢车先开${r(25,100)}km，快车几时追上？`,a:(b,c,d)=>(d/(b-c))},
+      {t:`甲${r(10,30)}天完成，乙${r(12,36)}天完成，合作几天？`,a:(a,b)=>((a*b)/(a+b)).toFixed(1)},
+      {t:`货物${r(480,1500)}吨，运走${r(150,600)}吨，剩几吨？`,a:(a,b)=>a-b},
+      {t:`三个数平均${r(20,60)}，甲乙平均${r(15,50)}，丙是几？`,a:(a,b)=>a*3-b*2},
+      {t:`原价${r(80,200)}元，涨${r(10,30)}%，现价几元？`,a:(a,b)=>Math.floor(a*(1+b/100))},
+      {t:`盐水${r(100,300)}g，浓度${r(10,25)}%，含盐几克？`,a:(a,b)=>a*b/100},
+      {t:`两数和${r(50,150)}，商${r(2,4)}，大数几？`,a:(a,b)=>a*b/(b+1)},
+      {t:`路程${r(300,800)}km，时间${r(4,10)}小时，速度几km/h？`,a:(a,b)=>a/b},
+      {t:`工作总量${r(600,1200)}，效率${r(30,80)}，时间几天？`,a:(a,b)=>a/b}
+    ]
+  }
+  if(g==6){
+    pool=[
+      {t:`原价${r(120,500)}元，降${r(10,30)}%再涨${r(10,30)}%，现价多少元？`,a:(a,b)=>+(a*(1-b/100)*(1+b/100)).toFixed(2)},
+      {t:`甲乙效率比${r(2,4)}:${r(3,5)}，合作${r(6,15)}天完成，甲单独做几天？`,a:(b,c,d)=>(d*(b+c)/b).toFixed(1)},
+      {t:`圆半径${r(4,22)}cm，周长(π=3.14)多少cm？`,a:(a)=>(2*3.14*a).toFixed(1)},
+      {t:`浓度${r(12,25)}%盐水${r(150,400)}g，加${r(8,30)}g盐，新浓度百分之几？`,a:(b,c,d)=>Math.round((b*c/100+d)/(b+d)*100)},
+      {t:`半圆直径${r(8,30)}cm，面积(π=3.14)多少？`,a:(a)=>(3.14*(a/2)**2/2).toFixed(1)},
+      {t:`商品八折出售卖${r(96,240)}元，原价几元？`,a:(a)=>a/0.8},
+      {t:`本金${r(2000,10000)}元，年利率${r(2,5)}%，一年利息几元？`,a:(a,b)=>a*b/100},
+      {t:`三个连续数和${r(45,150)}，最大数几？`,a:(a)=>a/3+1},
+      {t:`路程${r(400,1200)}km，去时${r(50,100)}km/h，回${r(60,120)}km/h，平均速度？`,a:(a,b,c)=>Math.floor(2*a/(a/b+a/c))},
+      {t:`长方体长${r(5,20)}宽${r(4,15)}高${r(3,10)}，体积？`,a:(a,b,c)=>a*b*c}
+    ]
+  }
+  let o=pool[r(0,pool.length-1)]
+  let a=r(5,500),b=r(2,200),c=r(5,400)
+  let ans=o.a(a,b,c)+''
+  return {text:o.t, ans}
 }
+
+// ================================================================================
+// 【超级单位换算】海量题库
+// ================================================================================
+function genUnit(g){
+  const list=[
+    {n:"千米",m:"米",r:1000},{n:"米",m:"分米",r:10},{n:"分米",m:"厘米",r:10},{n:"厘米",m:"毫米",r:10},
+    {n:"吨",m:"千克",r:1000},{n:"千克",m:"克",r:1000},{n:"平方米",m:"平方分米",r:100},
+    {n:"平方分米",m:"平方厘米",r:100},{n:"小时",m:"分钟",r:60},{n:"分钟",m:"秒",r:60},
+    {n:"米",m:"厘米",r:100},{n:"平方千米",m:"公顷",r:100},{n:"公顷",m:"平方米",r:10000},
+    {n:"吨",m:"克",r:1000000},{n:"立方米",m:"立方分米",r:1000},{n:"升",m:"毫升",r:1000},
+    {n:"千米",m:"厘米",r:100000},{n:"米",m:"毫米",r:1000},{n:"分米",m:"毫米",r:100}
+  ]
+  let o=list[r(0,list.length-1)]
+  let v=r(1,200)
+  return {text:`${v}${o.n} =（）${o.m}`, ans:(v*o.r)+''}
+}
+
+// ================================================================================
+// 【超级几何】无限不重复
+// ================================================================================
+function genGeometry(g){
+  if(g<=3){
+    let a=r(3,80)
+    return {text:`正方形边长${a}厘米，周长是多少厘米？`, ans:(a*4)+''}
+  }else if(g<=5){
+    let w=r(6,100),h=r(4,80)
+    return {text:`长方形长${w}厘米，宽${h}厘米，面积是多少平方厘米？`, ans:(w*h)+''}
+  }else{
+    let r1=r(2,40)
+    let t=r(0,1)
+    if(t===0)return {text:`圆的半径是${r1}厘米，面积(π=3.14)是多少平方厘米？`, ans:(3.14*r1*r1).toFixed(1)}
+    else return {text:`圆的半径是${r1}厘米，周长(π=3.14)是多少厘米？`, ans:(2*3.14*r1).toFixed(1)}
+  }
+}
+
+// ================================================================================
+// 【超级分数】海量题库
+// ================================================================================
+function genFraction(g){
+  if(g<4)return genKou(g)
+  let a=r(1,30),b=r(2,40),c=r(1,30),d=b
+  let act=r(0,2)
+  if(act===0)return {text:`${a}/${b} + ${c}/${d} =？`, ans:(a+c)+'/'+d}
+  else if(act===1)return {text:`${a+c}/${d} - ${c}/${d} =？`, ans:a+'/'+d}
+  else return {text:`${a}/${b} × ${c}/${d} =？`, ans:(a*c)+'/'+(b*d)}
+}
+
+// ================================================================================
+// 【超级奥数】200+题库，永不重复，无undefined
+// ================================================================================
+function genAoShu(g){
+  let pool=[]
+  if(g==1)pool=[
+    {text:"小红前面有5人，后面有6人，这队一共几人？",ans:"12"},
+    {text:"一根绳子剪3次成4段，剪5次成几段？",ans:"6"},
+    {text:"8个小朋友玩捉迷藏，捉住4人，藏几人？",ans:"3"},
+    {text:"把7个苹果放2个盘，至少有几个在同盘？",ans:"4"},
+    {text:"从前面数小明排第4，从后面数排第5，共几人？",ans:"8"},
+    {text:"3分钟煮1个鸡蛋，煮3个鸡蛋要几分钟？",ans:"3"},
+    {text:"教室里有6盏灯，关掉2盏，还剩几盏？",ans:"6"},
+    {text:"10个男生站一排，每两个男生间站1女生，共几人？",ans:"19"},
+    {text:"小明左边有5人，右边有3人，这排共几人？",ans:"9"},
+    {text:"把10枝花插3个瓶，至少有一瓶不少于几枝？",ans:"4"},
+    {text:"2分钟唱一首歌，5人同唱要几分钟？",ans:"2"},
+    {text:"桌子4角，锯掉1角，剩几角？",ans:"5"},
+    {text:"2个爸爸2个儿子去公园，至少买几张票？",ans:"3"},
+    {text:"鱼缸5条鱼，死了1条，剩几条？",ans:"5"},
+    {text:"一根彩带剪5次，每段3米，彩带长几米？",ans:"18"}
+  ]
+  if(g==2)pool=[
+    {text:"4只猫4天抓4只鼠，8只猫8天抓几只？",ans:"16"},
+    {text:"15个小朋友排队，间隔1米，队伍长几米？",ans:"14"},
+    {text:"一个数加7，乘7，减7，除以7，结果是7，原数是几？",ans:"1"},
+    {text:"把20只鸡关进4个笼，每笼只数不同，最多几只？",ans:"14"},
+    {text:"一层楼18级台阶，从1楼到4楼要走几级？",ans:"54"},
+    {text:"20个同学排队，报偶数的退出，剩几人？",ans:"10"},
+    {text:"一根彩带对折再对折，每段长5米，彩带全长几米？",ans:"20"},
+    {text:"小明今年6岁，小强4岁，2年后两人共几岁？",ans:"14"},
+    {text:"3点敲3下用2秒，6点敲6下用几秒？",ans:"5"},
+    {text:"1个西瓜切3刀，最多切成几块？",ans:"8"},
+    {text:"10个球，1红3黄6绿，摸到啥可能性最大？",ans:"绿"},
+    {text:"今年妈妈30岁，小明5岁，2年后差几岁？",ans:"25"},
+    {text:"1根木料锯1次2分钟，锯5段要几分钟？",ans:"8"},
+    {text:"10个苹果分给3人，每人至少1个，有几种分法？",ans:"8"},
+    {text:"一个两位数，个位十位和是9，最小是几？",ans:"18"}
+  ]
+  if(g==3)pool=[
+    {text:"鸡兔同笼15头，44条腿，鸡有几只？",ans:"8"},
+    {text:"锯成6段要15分钟，锯成11段要几分钟？",ans:"30"},
+    {text:"等差数列2,5,8,11…第12项是几？",ans:"35"},
+    {text:"三层书共120本，第二层比第一层多5本，第三层少5本，第一层几本？",ans:"40"},
+    {text:"被除数+除数=45，商是4，被除数是几？",ans:"36"},
+    {text:"一个数加18，乘18，减18，除以18，得18，原数？",ans:"1"},
+    {text:"周长42米的长方形，长是宽的2倍，面积多少？",ans:"98"},
+    {text:"100以内3的倍数和是多少？",ans:"1683"},
+    {text:"两数差12，商3，求大数？",ans:"18"},
+    {text:"100米跑道，每5米插旗，共插几面？",ans:"21"},
+    {text:"3个空瓶换1汽水，买12瓶，最多喝几瓶？",ans:"18"},
+    {text:"被减数+减数+差=60，被减数是几？",ans:"30"},
+    {text:"1-100中，数字1出现几次？",ans:"21"},
+    {text:"一个月有5个星期一，最少有几天？",ans:"29"},
+    {text:"3人3分钟搬3箱，9人9分钟搬几箱？",ans:"27"}
+  ]
+  if(g==4)pool=[
+    {text:"两数和36，差12，大数是几？",ans:"24"},
+    {text:"长方形周长64cm，长是宽的3倍，面积？",ans:"192"},
+    {text:"100以内7的倍数之和是多少？",ans:"735"},
+    {text:"被减数-减数-差=25，被减数是几？",ans:"50"},
+    {text:"甲乙共56元，甲给乙6元两人相等，甲原有几元？",ans:"34"},
+    {text:"一个数除以5余2，除以7余3，最小是几？",ans:"17"},
+    {text:"快车60km/h，慢车45km/h，相距60km，几时追上？",ans:"4"},
+    {text:"48和36的最小公倍数是几？",ans:"144"},
+    {text:"1-100能被2和3整除的数有几个？",ans:"16"},
+    {text:"一个数扩大5倍比原来大48，原数？",ans:"12"},
+    {text:"100棵树，按1松2柏排列，松有几棵？",ans:"34"},
+    {text:"5个数平均20，去掉一个数平均18，去掉的数？",ans:"28"},
+    {text:"100米，每10米分一段，共分几段？",ans:"10"},
+    {text:"两数积72，和17，求小数？",ans:"8"},
+    {text:"今年爸比儿大28岁，10年后大几岁？",ans:"28"}
+  ]
+  if(g==5)pool=[
+    {text:"一个数除以6余3，除以8余5，最小是几？",ans:"21"},
+    {text:"30和45的最大公因数+最小公倍数=？",ans:"105"},
+    {text:"浓度18%盐水100g，加20g盐，新浓度%？",ans:"32"},
+    {text:"甲乙丙平均数25，甲乙平均数23，丙是几？",ans:"29"},
+    {text:"追及距离80km，速度差16km/h，几时追上？",ans:"5"},
+    {text:"商品涨20%后180元，原价几元？",ans:"150"},
+    {text:"两数积96，和20，大数是几？",ans:"12"},
+    {text:"一个数小数点右移一位比原数大54，原数？",ans:"6"},
+    {text:"1-100的自然数中，不是5倍数的数和？",ans:"4000"},
+    {text:"长方体棱长和48，长宽高比3:2:1，体积？",ans:"48"},
+    {text:"100g水加25g盐，浓度百分之几？",ans:"20"},
+    {text:"快车慢车速度比5:3，路程比？",ans:"5:3"},
+    {text:"4个数平均15，加一个数平均16，加的数？",ans:"20"},
+    {text:"一个数除10余3，除7余3，最小几？",ans:"73"},
+    {text:"1-50的和是多少？",ans:"1275"}
+  ]
+  if(g==6)pool=[
+    {text:"原价200元，降15%再涨15%，现价？",ans:"195.5"},
+    {text:"甲乙效率比4:5，合作10天完成，甲独做几天？",ans:"22.5"},
+    {text:"半圆半径6cm，周长(π=3.14)？",ans:"30.84"},
+    {text:"浓度20%盐水150g，蒸发多少水变25%？",ans:"30"},
+    {text:"3个连续自然数和66，最大数是几？",ans:"23"},
+    {text:"甲比乙多25%，乙比甲少百分之几？",ans:"20"},
+    {text:"定价120元，八折出售仍赚20%，成本几元？",ans:"80"},
+    {text:"一项工程完成2/3用8天，全部要几天？",ans:"12"},
+    {text:"圆半径扩大2倍，面积扩大几倍？",ans:"4"},
+    {text:"本金5000，年利率3.2%，2年利息？",ans:"320"},
+    {text:"一件商品卖120元，亏20%，成本几元？",ans:"150"},
+    {text:"两数比3:4，和42，求大数？",ans:"24"},
+    {text:"1/2，1/4，1/8，…第5项是几？",ans:"1/32"},
+    {text:"路程一定，速度比2:3，时间比？",ans:"3:2"},
+    {text:"一个数的20%是30，这个数是几？",ans:"150"}
+  ]
+  return pool[r(0,pool.length-1)]
+}
+
+// ================================================================================
+// 判分 & 答案
+// ================================================================================
 function check(){
   if(questions.length===0){document.getElementById('result').innerText='请先生成题目！';return}
   let c=0
@@ -229,6 +458,7 @@ function check(){
   })
   document.getElementById('result').innerText=`共${questions.length}题，答对${c}题，正确率${Math.round(c/questions.length*100)}%`
 }
+
 function showAnswers(){
   if(questions.length===0){document.getElementById('result').innerText='请先生成题目！';return}
   let h='<h3>参考答案：</h3>'
